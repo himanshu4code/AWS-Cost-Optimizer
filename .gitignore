@@ -55,6 +55,12 @@ Thumbs.db
 # Logs
 *.log
 
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+context.md
 # MyPy
 .mypy_cache/
 .dmypy.json

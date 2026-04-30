@@ -4,7 +4,7 @@ Identifies idle and underutilized EC2 instances based on configurable thresholds
 """
 
 from typing import List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class IdleDetector:
@@ -15,13 +15,15 @@ class IdleDetector:
     DEFAULT_NETWORK_THRESHOLD = 1000000  # 1MB network traffic
     DEFAULT_STOPPED_DAYS_THRESHOLD = 7  # Stopped for > 7 days
     DEFAULT_MIN_DATAPPOINTS = 3  # Minimum datapoints for reliable analysis
+    DEFAULT_MAX_CPU_SPIKE_THRESHOLD = 10.0  # Any spike above this suggests active use
     
     def __init__(
         self,
         cpu_threshold: float = DEFAULT_CPU_THRESHOLD,
         network_threshold: float = DEFAULT_NETWORK_THRESHOLD,
         stopped_days_threshold: int = DEFAULT_STOPPED_DAYS_THRESHOLD,
-        min_datapoints: int = DEFAULT_MIN_DATAPPOINTS
+        min_datapoints: int = DEFAULT_MIN_DATAPPOINTS,
+        max_cpu_spike_threshold: float = DEFAULT_MAX_CPU_SPIKE_THRESHOLD,
     ):
         """
         Initialize Idle Detector.
@@ -36,6 +38,7 @@ class IdleDetector:
         self.network_threshold = network_threshold
         self.stopped_days_threshold = stopped_days_threshold
         self.min_datapoints = min_datapoints
+        self.max_cpu_spike_threshold = max_cpu_spike_threshold
     
     def is_instance_idle(self, instance: Dict[str, Any]) -> bool:
         """
@@ -62,7 +65,12 @@ class IdleDetector:
         
         # Check CPU utilization
         avg_cpu = cpu_metrics.get('average', 100)
+        max_cpu = cpu_metrics.get('maximum', 100)
         if avg_cpu > self.cpu_threshold:
+            return False
+
+        # Treat any meaningful CPU spike as active usage, even if the average is low.
+        if max_cpu > max(self.max_cpu_spike_threshold, self.cpu_threshold * 2):
             return False
         
         # Check network activity
@@ -93,7 +101,7 @@ class IdleDetector:
         
         # Note: For stopped instances, we'd ideally check StateTransitionReason
         # For simplicity, we'll flag all stopped instances older than threshold
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         # If launch time is old enough, consider it potentially abandoned
         if isinstance(launch_time, datetime):
@@ -159,7 +167,11 @@ class IdleDetector:
                 idle_instances.append({
                     **instance,
                     'Recommendation': 'TERMINATE',
-                    'Reason': f'CPU avg {instance["Metrics"]["CPU"]["average"]:.2f}% < {self.cpu_threshold}%'
+                    'Reason': (
+                        f'CPU avg {instance["Metrics"]["CPU"]["average"]:.2f}% '
+                        f'and max {instance["Metrics"]["CPU"]["maximum"]:.2f}% '
+                        f'with low network activity'
+                    )
                 })
             # Check for abandoned stopped instances
             elif self.is_stopped_abandoned(instance):

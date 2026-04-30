@@ -314,7 +314,7 @@ if __name__ == '__main__':
             ]
         },
         'all_instance_costs': [],
-        'analysis_timestamp': datetime.utcnow().isoformat()
+        'analysis_timestamp': datetime.now(timezone.utc).isoformat(),
     }
     
     print(generator.generate_summary_card(mock_analysis))

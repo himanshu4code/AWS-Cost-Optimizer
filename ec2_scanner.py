@@ -4,14 +4,21 @@ Scans AWS EC2 instances and collects metrics for cost optimization analysis.
 """
 
 import boto3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 
 
 class EC2Scanner:
     """Scans EC2 instances and collects usage metrics."""
     
-    def __init__(self, region: str = 'us-east-1', profile_name: Optional[str] = None):
+    def __init__(
+        self,
+        region: str = 'us-east-1',
+        profile_name: Optional[str] = None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
+        aws_session_token: Optional[str] = None,
+    ):
         """
         Initialize EC2 Scanner.
         
@@ -19,12 +26,20 @@ class EC2Scanner:
             region: AWS region to scan
             profile_name: AWS credentials profile name (optional)
         """
+        session_kwargs = {'region_name': region}
+
         if profile_name:
-            self.ec2_client = boto3.client('ec2', region_name=region, profile_name=profile_name)
-            self.cloudwatch_client = boto3.client('cloudwatch', region_name=region, profile_name=profile_name)
-        else:
-            self.ec2_client = boto3.client('ec2', region_name=region)
-            self.cloudwatch_client = boto3.client('cloudwatch', region_name=region)
+            session_kwargs['profile_name'] = profile_name
+
+        if aws_access_key_id and aws_secret_access_key:
+            session_kwargs['aws_access_key_id'] = aws_access_key_id
+            session_kwargs['aws_secret_access_key'] = aws_secret_access_key
+            if aws_session_token:
+                session_kwargs['aws_session_token'] = aws_session_token
+
+        session = boto3.Session(**session_kwargs)
+        self.ec2_client = session.client('ec2')
+        self.cloudwatch_client = session.client('cloudwatch')
         
         self.region = region
     
@@ -191,7 +206,7 @@ class EC2Scanner:
                 'CPU': cpu_metrics,
                 'Network': network_metrics
             },
-            'ScanTimestamp': datetime.utcnow().isoformat()
+            'ScanTimestamp': datetime.now(timezone.utc).isoformat(),
         }
     
     def scan_all_instances(self, days: int = 7) -> List[Dict[str, Any]]:

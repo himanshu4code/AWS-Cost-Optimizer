@@ -19,7 +19,11 @@ This tool helps startups and businesses optimize their AWS EC2 costs by:
 ✅ **"Saved ₹X per month"** - Shows potential savings simulation  
 ✅ **Multiple Output Formats** - Text, JSON, CSV reports  
 ✅ **REST API** - FastAPI-based API for integration  
+✅ **Auth0 Login** - Frontend login and API token validation  
+✅ **AWS Credential Entry** - Users can submit and save their own AWS keys per scan  
 ✅ **Mock Data Mode** - Demo without AWS credentials  
+✅ **Frontend App** - React UI for login, credentials, and insights  
+✅ **Dashboard Operations** - Dashboard, text, summary, and JSON scan views  
 
 ## Installation
 
@@ -29,6 +33,10 @@ cd /workspace
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install frontend tooling
+npm install
+npm install --prefix frontend
 ```
 
 ## Quick Start
@@ -37,19 +45,22 @@ pip install -r requirements.txt
 
 ```bash
 # Run with mock data (no AWS credentials needed)
-python main.py --mock
+python scripts/cost_optimizer.py --mock
 
 # Scan real AWS account
-python main.py --region us-east-1 --days 7
+python scripts/cost_optimizer.py --region us-east-1 --days 7
 
 # Save report to file
-python main.py --mock --output report.txt
+python scripts/cost_optimizer.py --mock --output report.txt
 
 # Generate JSON report
-python main.py --mock --format json --output report.json
+python scripts/cost_optimizer.py --mock --format json --output report.json
+
+# Scan a real AWS account with direct credentials
+python scripts/cost_optimizer.py --region us-east-1 --aws-access-key-id AKIA... --aws-secret-access-key ...
 
 # Show summary card only
-python main.py --mock --format summary
+python scripts/cost_optimizer.py --mock --format summary
 ```
 
 ### API Usage
@@ -62,31 +73,66 @@ uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 http://localhost:8000/docs
 ```
 
+### Frontend Usage
+
+```bash
+# Start both frontend and backend from one command
+npm run dev
+
+# Or run the frontend separately
+npm --prefix frontend run dev
+```
+
+The frontend expects these environment variables:
+
+```bash
+VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
+VITE_AUTH0_CLIENT_ID=your_client_id
+VITE_AUTH0_AUDIENCE=https://aws-cost-optimizer-api
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+The backend expects matching Auth0 settings:
+
+```bash
+AUTH0_DOMAIN=your-tenant.us.auth0.com
+AUTH0_AUDIENCE=https://aws-cost-optimizer-api
+AUTH0_CLIENT_ID=your_client_id
+FRONTEND_ORIGIN=http://localhost:5173
+```
+
 #### API Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /` | Welcome message |
 | `GET /health` | Health check |
+| `GET /auth/config` | Auth0 configuration for the frontend |
 | `GET /scan` | Full scan with JSON response |
+| `POST /scan` | Authenticated scan using user AWS credentials |
+| `POST /scan/text` | Authenticated text report scan |
+| `POST /scan/summary` | Authenticated summary card scan |
+| `POST /scan/json` | Authenticated JSON analysis scan |
 | `GET /scan/text` | Human-readable text report |
 | `GET /scan/summary` | Quick summary card |
 | `GET /scan/json` | Complete JSON analysis |
 
 Example API call:
 ```bash
-curl "http://localhost:8000/scan/text?use_mock_data=true"
+curl -H "Authorization: Bearer <access_token>" "http://localhost:8000/scan/text?use_mock_data=true"
 ```
 
 ## Project Structure
 
 ```
 /workspace
-├── main.py              # CLI entry point
+├── main.py              # Backward-compatible CLI wrapper
 ├── ec2_scanner.py       # EC2 & CloudWatch scanning
 ├── idle_detector.py     # Idle instance detection logic
 ├── cost_calculator.py   # Cost calculation in INR/USD
 ├── report_generator.py  # Report generation (txt/json/csv)
+├── scripts/
+│   └── cost_optimizer.py # CLI entry point
 ├── requirements.txt     # Python dependencies
 ├── context.md           # Implementation context log
 ├── README.md            # This file
@@ -120,7 +166,16 @@ export AWS_DEFAULT_REGION=us-east-1
 
 Or use `~/.aws/credentials` profile:
 ```bash
-python main.py --profile myprofile --region us-east-1
+python scripts/cost_optimizer.py --profile myprofile --region us-east-1
+```
+
+For Auth0-backed frontend and API authentication:
+
+```bash
+export AUTH0_DOMAIN=your-tenant.us.auth0.com
+export AUTH0_AUDIENCE=https://aws-cost-optimizer-api
+export AUTH0_CLIENT_ID=your_client_id
+export FRONTEND_ORIGIN=http://localhost:5173
 ```
 
 ## Sample Output
@@ -206,6 +261,17 @@ For real AWS scanning, minimum permissions:
 - Verify instance importance before termination
 - Create snapshots of important data
 - Test in non-production first
+
+## Auth0 Setup
+
+1. Create an Auth0 Single Page Application for the frontend.
+2. Create an Auth0 API and set the audience to the same value used in `AUTH0_AUDIENCE`.
+3. Add `http://localhost:5173` to the allowed callback and logout URLs.
+4. Set the frontend variables in `frontend/.env` using the values from Auth0.
+5. Set the backend variables before starting the API server.
+
+The frontend sends AWS credentials only when you submit a scan, and the backend uses them for that request only.
+If you enable "Remember AWS credentials on this device", the keys are stored in browser localStorage for that Auth0 user only.
 
 ## License
 

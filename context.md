@@ -202,6 +202,23 @@ python main.py --mock -f summary              # Summary only
 - IAM permissions required
 - Use cases for startups/consultants
 
+### Step 9: Auth0 Frontend + Unified Dev Scripts
+**Purpose**: Add authenticated web access with per-request AWS credentials and a single command to run both apps
+
+**Key Files Added/Updated**:
+- `api/auth.py` - Auth0 JWT validation helpers
+- `api/main.py` - Authenticated scan endpoints and CORS
+- `frontend/` - React + Auth0 UI for login and AWS credential entry
+- `package.json` - Root dev scripts to launch backend and frontend together
+
+**Implementation Details**:
+- Auth0 access tokens are validated against the configured JWKS endpoint
+- Users sign in through the React frontend and submit AWS keys only for the active scan request
+- Users can optionally remember AWS keys on the device in browser localStorage, keyed by Auth0 subject
+- The dashboard can run four authenticated views: dashboard, text, summary, and JSON
+- `npm run dev` launches the FastAPI backend and Vite frontend together
+- CLI now accepts direct AWS key arguments for parity with the API flow
+
 ---
 
 ## File Structure Summary

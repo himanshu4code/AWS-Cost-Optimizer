@@ -4,7 +4,7 @@ Calculates EC2 instance costs and potential savings in INR (₹).
 """
 
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class CostCalculator:
@@ -320,7 +320,7 @@ class CostCalculator:
                 'rightsize_recommendations': rightsize_details
             },
             'all_instance_costs': instance_costs,
-            'analysis_timestamp': datetime.utcnow().isoformat(),
+            'analysis_timestamp': datetime.now(timezone.utc).isoformat(),
             'currency': 'INR',
             'exchange_rate_used': self.usd_to_inr_rate
         }
