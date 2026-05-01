@@ -1,13 +1,9 @@
-"""Auth related API schemas."""
+"""Shared API schemas for frontend and scan-related metadata."""
 
 from pydantic import BaseModel
 
 
-class Auth0Config(BaseModel):
-    domain: str
-    audience: str
-    client_id: str
-    issuer: str
+class FrontendConfig(BaseModel):
     frontend_origin: str
     configured: bool
 

@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.apis.auth import router as auth_router
+from api.apis.legacy import router as legacy_router
 from api.apis.core import router as core_router
 from api.apis.scans import router as scans_router
 from api.config.settings import get_settings, get_frontend_origins
@@ -26,7 +26,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(core_router)
-    app.include_router(auth_router)
+    app.include_router(legacy_router)
     app.include_router(scans_router)
     return app
 

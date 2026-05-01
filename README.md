@@ -19,10 +19,10 @@ This tool helps startups and businesses optimize their AWS EC2 costs by:
 ✅ **"Saved ₹X per month"** - Shows potential savings simulation  
 ✅ **Multiple Output Formats** - Text, JSON, CSV reports  
 ✅ **REST API** - FastAPI-based API for integration  
-✅ **Auth0 Login** - Frontend login and API token validation  
+✅ **Frontend UI** - React UI for credentials and insights  
 ✅ **AWS Credential Entry** - Users can submit and save their own AWS keys per scan  
 ✅ **Mock Data Mode** - Demo without AWS credentials  
-✅ **Frontend App** - React UI for login, credentials, and insights  
+✅ **Frontend App** - React UI for credentials and insights  
 ✅ **Dashboard Operations** - Dashboard, text, summary, and JSON scan views  
 
 ## Installation
@@ -63,42 +63,98 @@ python scripts/cost_optimizer.py --region us-east-1 --aws-access-key-id AKIA... 
 python scripts/cost_optimizer.py --mock --format summary
 ```
 
-### API Usage
+### Backend API (FastAPI)
 
 ```bash
+# Install dependencies
+pip install -r requirements.txt
+
 # Start the API server
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
-# Access interactive docs
+# Access interactive docs at:
 http://localhost:8000/docs
+http://localhost:8000/redoc
 ```
 
-### Frontend Usage
+### Frontend (React + Vite)
 
 ```bash
-# Start both frontend and backend from one command
-npm run dev
+# Install frontend dependencies
+npm install --prefix frontend
 
-# Or run the frontend separately
+# Start the frontend development server
+npm --prefix frontend run dev
+
+# Frontend will be available at:
+http://localhost:5173
+```
+
+### Running Both Together
+
+**Option 1: Start separately in two terminals**
+
+Terminal 1 (Backend):
+```bash
+source .venv/bin/activate
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Terminal 2 (Frontend):
+```bash
 npm --prefix frontend run dev
 ```
 
-The frontend expects these environment variables:
+**Option 2: Using Docker Compose (see below)**
+
+### Environment Configuration
+
+The frontend expects this environment variable:
 
 ```bash
-VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
-VITE_AUTH0_CLIENT_ID=your_client_id
-VITE_AUTH0_AUDIENCE=https://aws-cost-optimizer-api
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-The backend expects matching Auth0 settings:
+The backend expects the frontend origin for CORS:
 
 ```bash
-AUTH0_DOMAIN=your-tenant.us.auth0.com
-AUTH0_AUDIENCE=https://aws-cost-optimizer-api
-AUTH0_CLIENT_ID=your_client_id
-FRONTEND_ORIGIN=http://localhost:5173
+FRONTEND_ORIGINS=http://localhost:5173
+```
+
+## Docker Compose
+
+Run the entire application stack (FastAPI backend + React frontend) with a single command:
+
+```bash
+# Start all services
+docker-compose up
+
+# Start in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+**Services will be available at:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+**Prerequisites:**
+- Docker
+- Docker Compose
+
+**Configuration:**
+Create a `.env` file in the root directory with your API and AWS settings:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+
+FRONTEND_ORIGINS=http://localhost:5173
 ```
 
 #### API Endpoints
@@ -107,12 +163,11 @@ FRONTEND_ORIGIN=http://localhost:5173
 |----------|-------------|
 | `GET /` | Welcome message |
 | `GET /health` | Health check |
-| `GET /auth/config` | Auth0 configuration for the frontend |
 | `GET /scan` | Full scan with JSON response |
-| `POST /scan` | Authenticated scan using user AWS credentials |
-| `POST /scan/text` | Authenticated text report scan |
-| `POST /scan/summary` | Authenticated summary card scan |
-| `POST /scan/json` | Authenticated JSON analysis scan |
+| `POST /scan` | Scan using supplied AWS credentials |
+| `POST /scan/text` | Text report scan |
+| `POST /scan/summary` | Summary card scan |
+| `POST /scan/json` | JSON analysis scan |
 | `GET /scan/text` | Human-readable text report |
 | `GET /scan/summary` | Quick summary card |
 | `GET /scan/json` | Complete JSON analysis |
@@ -169,13 +224,11 @@ Or use `~/.aws/credentials` profile:
 python scripts/cost_optimizer.py --profile myprofile --region us-east-1
 ```
 
-For Auth0-backed frontend and API authentication:
+For local frontend and API configuration:
 
 ```bash
-export AUTH0_DOMAIN=your-tenant.us.auth0.com
-export AUTH0_AUDIENCE=https://aws-cost-optimizer-api
-export AUTH0_CLIENT_ID=your_client_id
-export FRONTEND_ORIGIN=http://localhost:5173
+export VITE_API_BASE_URL=http://localhost:8000
+export FRONTEND_ORIGINS=http://localhost:5173
 ```
 
 ## Sample Output
@@ -262,16 +315,14 @@ For real AWS scanning, minimum permissions:
 - Create snapshots of important data
 - Test in non-production first
 
-## Auth0 Setup
+## Frontend Setup
 
-1. Create an Auth0 Single Page Application for the frontend.
-2. Create an Auth0 API and set the audience to the same value used in `AUTH0_AUDIENCE`.
-3. Add `http://localhost:5173` to the allowed callback and logout URLs.
-4. Set the frontend variables in `frontend/.env` using the values from Auth0.
-5. Set the backend variables before starting the API server.
+1. Set `VITE_API_BASE_URL` in `frontend/.env` or the root `.env` file.
+2. Set `FRONTEND_ORIGINS` to the allowed browser origin for the backend.
+3. Start the backend and frontend as separate processes or through Docker Compose.
 
 The frontend sends AWS credentials only when you submit a scan, and the backend uses them for that request only.
-If you enable "Remember AWS credentials on this device", the keys are stored in browser localStorage for that Auth0 user only.
+If you enable "Remember AWS credentials on this device", the keys are stored in browser localStorage on that device only.
 
 ## License
 
