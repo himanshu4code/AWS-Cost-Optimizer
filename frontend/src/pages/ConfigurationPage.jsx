@@ -10,7 +10,6 @@ export default function ConfigurationPage() {
     secretAccessKey: '',
     sessionToken: '',
   });
-  const [rememberCredentials, setRememberCredentials] = useState(true);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -28,7 +27,6 @@ export default function ConfigurationPage() {
         secretAccessKey: parsed.secretAccessKey || '',
         sessionToken: parsed.sessionToken || '',
       });
-      setRememberCredentials(true);
     } catch {
       window.sessionStorage.removeItem(storageKey);
     }
@@ -45,7 +43,7 @@ export default function ConfigurationPage() {
   function handleSave() {
     const storageKey = getStorageKey();
 
-    if (rememberCredentials && credentials.accessKeyId) {
+    if (credentials.accessKeyId) {
       window.sessionStorage.setItem(storageKey, JSON.stringify(credentials));
       setMessage('Credentials saved in your session');
       setTimeout(() => setMessage(''), 3000);
@@ -126,17 +124,6 @@ export default function ConfigurationPage() {
               placeholder="Leave empty for permanent keys"
               className="config-input"
             />
-          </div>
-
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={rememberCredentials}
-                onChange={(event) => setRememberCredentials(event.target.checked)}
-              />
-              <span>Remember credentials in this session</span>
-            </label>
           </div>
 
           <div className="form-actions">

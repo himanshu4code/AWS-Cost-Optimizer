@@ -33,7 +33,7 @@ export default function DashboardPage({ apiBaseUrl }) {
       const entry = {
         timestamp: new Date().toISOString(),
         mode: scanResult.mode,
-        region: dashboardPayload.region || 'us-east-1',
+        region: scanResult.region || dashboardPayload.region || scanResult.payload?.region || 'us-east-1',
         total_instances: dashboardPayload?.summary?.total_instances || scanResult.payload?.summary?.total_instances || 0,
         potential_monthly_savings_inr:
           dashboardPayload?.summary?.potential_monthly_savings_inr ||

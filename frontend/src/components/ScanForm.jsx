@@ -22,7 +22,6 @@ export default function ScanForm({ apiBaseUrl, onResult }) {
     sessionToken: '',
   });
   const [selectedOperation, setSelectedOperation] = useState('dashboard');
-  const [rememberCredentials, setRememberCredentials] = useState(true);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,7 +42,6 @@ export default function ScanForm({ apiBaseUrl, onResult }) {
         sessionToken: parsed.sessionToken || '',
         useMockData: false,
       }));
-      setRememberCredentials(true);
     } catch {
       window.sessionStorage.removeItem(storageKey);
     }
@@ -51,11 +49,6 @@ export default function ScanForm({ apiBaseUrl, onResult }) {
 
   function persistCredentials(credentials) {
     const storageKey = getStorageKey();
-
-    if (!rememberCredentials) {
-      window.sessionStorage.removeItem(storageKey);
-      return;
-    }
 
     window.sessionStorage.setItem(storageKey, JSON.stringify(credentials));
   }
@@ -121,13 +114,18 @@ export default function ScanForm({ apiBaseUrl, onResult }) {
       let result;
       if (selectedOp.mode === 'json') {
         const data = await response.json();
-        result = { mode: 'json', payload: data, rendered: JSON.stringify(data, null, 2) };
+        result = {
+          mode: 'json',
+          region: formState.region,
+          payload: data,
+          rendered: JSON.stringify(data, null, 2),
+        };
       } else if (selectedOp.mode === 'dashboard') {
         const data = await response.json();
-        result = { mode: 'dashboard', payload: data };
+        result = { mode: 'dashboard', region: formState.region, payload: data };
       } else {
         const text = await response.text();
-        result = { mode: selectedOp.mode, rendered: text };
+        result = { mode: selectedOp.mode, region: formState.region, rendered: text };
       }
 
       onResult(result);
@@ -243,15 +241,6 @@ export default function ScanForm({ apiBaseUrl, onResult }) {
       </div>
 
       <div className="credential-actions">
-        <label className="toggle remember-toggle">
-          <input
-            type="checkbox"
-            checked={rememberCredentials}
-            onChange={(event) => setRememberCredentials(event.target.checked)}
-          />
-          <span>Remember AWS credentials on this device</span>
-        </label>
-
         <button type="button" className="secondary-button" onClick={clearSavedCredentials}>
           Clear saved credentials
         </button>
