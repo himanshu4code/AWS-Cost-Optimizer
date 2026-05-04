@@ -26,8 +26,12 @@ def _parse_csv(value: str) -> tuple[str, ...]:
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Read settings once and reuse them across the app."""
+    frontend_origins = os.getenv("FRONTEND_ORIGINS", "").strip()
+    if not frontend_origins:
+        frontend_origins = "http://localhost:5173,http://localhost:4173"
+
     return Settings(
-        frontend_origins=_parse_csv(os.getenv("FRONTEND_ORIGINS", "http://localhost:5173")),
+        frontend_origins=_parse_csv(frontend_origins),
     )
 
 

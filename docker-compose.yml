@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS}
+      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS:-http://localhost:5173}
     volumes:
       - .:/app
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
